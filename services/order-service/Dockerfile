@@ -25,11 +25,11 @@ ENV NODE_ENV=production
 COPY package*.json ./
 COPY services/order-service/package*.json ./services/order-service/
 
-RUN npm ci --only=production
-
+# Copy built artifacts and hoisted node_modules from builder workspace
+COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/services/order-service/dist ./services/order-service/dist
 
 WORKDIR /app/services/order-service
 EXPOSE 3002
 
-CMD ["node", "dist/app.js"]
+CMD ["node", "dist/server.js"]

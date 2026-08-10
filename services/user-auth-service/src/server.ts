@@ -3,11 +3,15 @@ import { env } from './config/env';
 import { connectDB, disconnectDB } from './config/prisma';
 
 const startServer = async () => {
-  await connectDB();
-
-  const server = app.listen(env.PORT, () => {
-    console.log(`🚀 user-auth-service running on port ${env.PORT} in ${env.NODE_ENV} mode`);
+  const server = app.listen(env.PORT, '0.0.0.0', () => {
+    console.log(`🚀 user-auth-service running on http://0.0.0.0:${env.PORT} in ${env.NODE_ENV} mode`);
   });
+
+  try {
+    await connectDB();
+  } catch (error) {
+    console.error('⚠️ Initial DB connection attempt failed, will retry on request:', error);
+  }
 
   const gracefulShutdown = async (signal: string) => {
     console.log(`\n⚠️ Received ${signal}. Shutting down gracefully...`);

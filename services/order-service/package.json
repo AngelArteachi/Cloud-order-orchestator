@@ -2,11 +2,11 @@
   "name": "@cloud-order-orchestrator/order-service",
   "version": "1.0.0",
   "description": "Order Management Microservice with Express, MongoDB/Mongoose & Redis Caching/PubSub",
-  "main": "dist/app.js",
+  "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/app.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
+    "start": "node dist/server.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "test": "jest --passWithNoTests",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration"
