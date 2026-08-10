@@ -4,7 +4,8 @@
   "description": "User Authentication Microservice with Express, PostgreSQL & Prisma ORM",
   "main": "dist/app.js",
   "scripts": {
-    "build": "tsc",
+    "build": "prisma generate && tsc",
+    "postinstall": "prisma generate",
     "start": "node dist/app.js",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "test": "jest --passWithNoTests",
