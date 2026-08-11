@@ -73,3 +73,11 @@ export const deleteCachePattern = async (pattern: string): Promise<void> => {
     // Ignore cache deletion pattern failure in test/offline mode
   }
 };
+
+export const publishEvent = async (channel: string, message: unknown): Promise<void> => {
+  try {
+    await redisClient.publish(channel, JSON.stringify(message));
+  } catch {
+    // Ignore Pub/Sub publish errors during test/offline mode
+  }
+};

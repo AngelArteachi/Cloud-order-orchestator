@@ -1,6 +1,7 @@
 import { IOrderRepository, OrderRepository } from '../repositories/order.repository';
 import { CreateOrderInput, OrderEntity, UpdateOrderStatusInput } from '../types/order.types';
 import { AppError } from '../middlewares/error.middleware';
+import { publishEvent } from '../config/redis';
 
 export class OrderService {
   constructor(private orderRepository: IOrderRepository = new OrderRepository()) {}
@@ -15,7 +16,19 @@ export class OrderService {
       return sum + item.price * item.quantity;
     }, 0);
 
-    return this.orderRepository.create(userId, input, totalAmount);
+    const order = await this.orderRepository.create(userId, input, totalAmount);
+
+    // Publish ORDER_CREATED event via Redis Pub/Sub
+    await publishEvent('order:events', {
+      event: 'ORDER_CREATED',
+      orderId: order.id,
+      userId: order.userId,
+      items: order.items,
+      totalAmount: order.totalAmount,
+      shippingAddress: order.shippingAddress,
+    });
+
+    return order;
   }
 
   async getOrderById(
@@ -50,6 +63,14 @@ export class OrderService {
       throw new AppError('Failed to update order status', 400);
     }
 
+    // Publish ORDER_STATUS_UPDATED event via Redis Pub/Sub
+    await publishEvent('order:events', {
+      event: 'ORDER_STATUS_UPDATED',
+      orderId: updatedOrder.id,
+      userId: updatedOrder.userId,
+      status: updatedOrder.status,
+    });
+
     return updatedOrder;
   }
 
@@ -79,6 +100,14 @@ export class OrderService {
     if (!cancelledOrder) {
       throw new AppError('Failed to cancel order', 400);
     }
+
+    // Publish ORDER_STATUS_UPDATED event via Redis Pub/Sub
+    await publishEvent('order:events', {
+      event: 'ORDER_STATUS_UPDATED',
+      orderId: cancelledOrder.id,
+      userId: cancelledOrder.userId,
+      status: cancelledOrder.status,
+    });
 
     return cancelledOrder;
   }

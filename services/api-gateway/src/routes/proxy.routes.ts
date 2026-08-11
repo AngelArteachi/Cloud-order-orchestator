@@ -24,4 +24,14 @@ router.use(
   })
 );
 
+// Proxy to notification-service (Port 3003)
+router.use(
+  '/api/notifications',
+  proxy(env.NOTIFICATION_SERVICE_URL, {
+    proxyReqPathResolver: (req) => {
+      return `/api/notifications${req.url}`;
+    },
+  })
+);
+
 export default router;
