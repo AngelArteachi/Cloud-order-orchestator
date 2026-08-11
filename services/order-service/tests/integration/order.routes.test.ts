@@ -3,19 +3,11 @@ import jwt from 'jsonwebtoken';
 import app from '../../src/app';
 import { OrderModel } from '../../src/models/order.model';
 import { redisClient } from '../../src/config/redis';
-
-process.env.JWT_SECRET = 'super_secret_jwt_key_change_in_production_32chars';
+import { env } from '../../src/config/env';
 
 describe('Order Routes Integration Tests (Supertest)', () => {
-  const userToken = jwt.sign(
-    { userId: 'user-888', email: 'test.user@example.com', role: 'USER' },
-    process.env.JWT_SECRET
-  );
-
-  const adminToken = jwt.sign(
-    { userId: 'admin-999', email: 'admin.user@example.com', role: 'ADMIN' },
-    process.env.JWT_SECRET
-  );
+  let userToken: string;
+  let adminToken: string;
 
   const mockDate = new Date();
   const mockOrderDoc: any = {
@@ -28,6 +20,18 @@ describe('Order Routes Integration Tests (Supertest)', () => {
     createdAt: mockDate,
     updatedAt: mockDate,
   };
+
+  beforeAll(() => {
+    userToken = jwt.sign(
+      { userId: 'user-888', email: 'test.user@example.com', role: 'USER' },
+      env.JWT_SECRET
+    );
+
+    adminToken = jwt.sign(
+      { userId: 'admin-999', email: 'admin.user@example.com', role: 'ADMIN' },
+      env.JWT_SECRET
+    );
+  });
 
   beforeEach(async () => {
     jest.clearAllMocks();
