@@ -5,7 +5,12 @@ export const redisClient = new Redis({
   host: env.REDIS_HOST,
   port: env.REDIS_PORT,
   lazyConnect: true,
+  enableOfflineQueue: process.env.NODE_ENV !== 'test',
+  maxRetriesPerRequest: process.env.NODE_ENV === 'test' ? 0 : 20,
   retryStrategy(times: number) {
+    if (process.env.NODE_ENV === 'test') {
+      return null;
+    }
     const delay = Math.min(times * 100, 3000);
     return delay;
   },
@@ -16,7 +21,9 @@ redisClient.on('connect', () => {
 });
 
 redisClient.on('error', (err: Error) => {
-  console.error('⚠️ Redis error:', err.message);
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('⚠️ Redis error:', err.message);
+  }
 });
 
 export const connectRedis = async (): Promise<void> => {
@@ -25,7 +32,9 @@ export const connectRedis = async (): Promise<void> => {
       await redisClient.connect();
     }
   } catch (error) {
-    console.error('⚠️ Could not connect to Redis, operating in fallback mode:', error);
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('⚠️ Could not connect to Redis, operating in fallback mode:', error);
+    }
   }
 };
 
@@ -41,16 +50,16 @@ export const getCache = async <T>(key: string): Promise<T | null> => {
 export const setCache = async (key: string, data: unknown, ttlSeconds = 300): Promise<void> => {
   try {
     await redisClient.set(key, JSON.stringify(data), 'EX', ttlSeconds);
-  } catch (error) {
-    console.error('⚠️ Redis setCache error:', error);
+  } catch {
+    // Ignore cache failure and fallback to DB
   }
 };
 
 export const deleteCache = async (key: string): Promise<void> => {
   try {
     await redisClient.del(key);
-  } catch (error) {
-    console.error('⚠️ Redis deleteCache error:', error);
+  } catch {
+    // Ignore cache deletion failure in test/offline mode
   }
 };
 
@@ -60,7 +69,7 @@ export const deleteCachePattern = async (pattern: string): Promise<void> => {
     if (keys.length > 0) {
       await redisClient.del(...keys);
     }
-  } catch (error) {
-    console.error('⚠️ Redis deleteCachePattern error:', error);
+  } catch {
+    // Ignore cache deletion pattern failure in test/offline mode
   }
 };
