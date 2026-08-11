@@ -34,4 +34,14 @@ router.use(
   })
 );
 
+// Proxy to payment-service (Port 3004)
+router.use(
+  '/api/payments',
+  proxy(env.PAYMENT_SERVICE_URL, {
+    proxyReqPathResolver: (req) => {
+      return `/api/payments${req.url}`;
+    },
+  })
+);
+
 export default router;

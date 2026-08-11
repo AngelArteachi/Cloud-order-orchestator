@@ -11,6 +11,7 @@ const envSchema = z.object({
   AUTH_SERVICE_URL: z.string().default('http://localhost:3001'),
   ORDER_SERVICE_URL: z.string().default('http://localhost:3002'),
   NOTIFICATION_SERVICE_URL: z.string().default('http://localhost:3003'),
+  PAYMENT_SERVICE_URL: z.string().default('http://localhost:3004'),
   RATE_LIMIT_WINDOW_MS: z.string().default('900000').transform((val) => parseInt(val, 10)),
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100').transform((val) => parseInt(val, 10)),
 });

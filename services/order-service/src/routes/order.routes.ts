@@ -8,6 +8,7 @@ const router = Router();
 const orderController = new OrderController();
 
 router.get('/health', orderController.healthCheck);
+router.post('/webhook/payment', orderController.handlePaymentWebhook);
 router.post('/', authenticateJWT, validateRequest(createOrderSchema), orderController.createOrder);
 router.get('/', authenticateJWT, orderController.getUserOrders);
 router.get('/:id', authenticateJWT, orderController.getOrderById);

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { OrderService } from '../services/order.service';
 import { AuthenticatedRequest } from '../types/order.types';
 import { AppError } from '../middlewares/error.middleware';
@@ -84,6 +85,41 @@ export class OrderController {
         message: 'Order cancelled successfully',
         data: { order: cancelledOrder },
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  handlePaymentWebhook = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const signature = req.headers['x-webhook-signature'] as string;
+      const webhookSecret = process.env.WEBHOOK_SECRET || 'super_secret_webhook_signing_key_32chars';
+
+      if (!signature) {
+        throw new AppError('Webhook signature header missing', 401);
+      }
+
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+
+      if (signature !== expectedSignature) {
+        throw new AppError('Invalid webhook signature', 401);
+      }
+
+      const { orderId, status } = req.body;
+      if (status === 'SUCCESS' && orderId) {
+        const updatedOrder = await this.orderService.updateOrderStatus(orderId, { status: 'PROCESSING' });
+        res.status(200).json({
+          status: 'success',
+          message: 'Payment webhook processed and order status updated to PROCESSING',
+          data: { order: updatedOrder },
+        });
+        return;
+      }
+
+      res.status(200).json({ status: 'success', message: 'Webhook received' });
     } catch (error) {
       next(error);
     }
