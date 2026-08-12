@@ -11,6 +11,7 @@ const envSchema = z.object({
     .default('mongodb://admin:mongo_secret@localhost:27017/orders_db?authSource=admin'),
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.string().default('6379').transform((val) => parseInt(val, 10)),
+  INVENTORY_SERVICE_URL: z.string().default('http://localhost:3005'),
   JWT_SECRET: z
     .string()
     .min(16, 'JWT_SECRET must be at least 16 characters long')

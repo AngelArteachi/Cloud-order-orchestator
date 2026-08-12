@@ -44,4 +44,14 @@ router.use(
   })
 );
 
+// Proxy to inventory-service (Port 3005)
+router.use(
+  '/api/inventory',
+  proxy(env.INVENTORY_SERVICE_URL, {
+    proxyReqPathResolver: (req) => {
+      return `/api/inventory${req.url}`;
+    },
+  })
+);
+
 export default router;

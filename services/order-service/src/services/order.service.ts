@@ -2,6 +2,7 @@ import { IOrderRepository, OrderRepository } from '../repositories/order.reposit
 import { CreateOrderInput, OrderEntity, UpdateOrderStatusInput } from '../types/order.types';
 import { AppError } from '../middlewares/error.middleware';
 import { publishEvent } from '../config/redis';
+import { env } from '../config/env';
 
 export class OrderService {
   constructor(private orderRepository: IOrderRepository = new OrderRepository()) {}
@@ -9,6 +10,30 @@ export class OrderService {
   async createOrder(userId: string, input: CreateOrderInput): Promise<OrderEntity> {
     if (!input.items || input.items.length === 0) {
       throw new AppError('Order items cannot be empty', 400);
+    }
+
+    // Step 1: Reserve stock from inventory-service
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        const reserveRes = await fetch(`${env.INVENTORY_SERVICE_URL}/api/inventory/reserve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: input.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          }),
+        });
+
+        if (!reserveRes.ok) {
+          const errorData: any = await reserveRes.json().catch(() => ({}));
+          throw new AppError(errorData.message || 'Insufficient stock for requested items', 400);
+        }
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        console.error('⚠️ Could not connect to inventory-service for stock reservation:', err);
+      }
     }
 
     // Calculate total amount
@@ -99,6 +124,24 @@ export class OrderService {
     const cancelledOrder = await this.orderRepository.updateStatus(id, 'CANCELLED');
     if (!cancelledOrder) {
       throw new AppError('Failed to cancel order', 400);
+    }
+
+    // Release stock back to inventory-service
+    if (process.env.NODE_ENV !== 'test') {
+      try {
+        await fetch(`${env.INVENTORY_SERVICE_URL}/api/inventory/release`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: order.items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          }),
+        });
+      } catch (err) {
+        console.error('⚠️ Could not release stock to inventory-service:', err);
+      }
     }
 
     // Publish ORDER_STATUS_UPDATED event via Redis Pub/Sub
