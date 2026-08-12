@@ -4,13 +4,24 @@ import helmet from 'helmet';
 import proxyRoutes from './routes/proxy.routes';
 import { globalRateLimiter } from './middlewares/rateLimiter.middleware';
 import { errorHandler } from './middlewares/error.middleware';
+import { setupGatewayMetrics } from './middlewares/metrics.middleware';
+import { DashboardController } from './controllers/dashboard.controller';
 
 const app: Application = express();
+const dashboardController = new DashboardController();
 
-app.use(helmet());
+// Disable contentSecurityPolicy in Helmet for Dashboard inline scripts
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 app.use(cors());
 
-// Healthcheck
+// Prometheus Metrics Setup
+setupGatewayMetrics(app);
+
+// Healthcheck & Dashboard UI
 app.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'UP',
@@ -18,6 +29,9 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+app.get('/dashboard', dashboardController.renderDashboardHTML);
+app.get('/api/dashboard', dashboardController.getDashboardJSON);
 
 // Apply Rate Limiter to API routes
 if (process.env.NODE_ENV !== 'test') {

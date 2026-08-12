@@ -1,6 +1,6 @@
 # 🚀 Cloud Order Orchestrator
 
-Production-grade distributed microservices backend architecture built with **Node.js**, **TypeScript**, **Express**, **PostgreSQL**, **MongoDB**, **Redis**, and **Docker**.
+Production-grade distributed microservices backend architecture built with **Node.js**, **TypeScript**, **Express**, **PostgreSQL**, **MongoDB**, **Redis**, **Prometheus**, and **Docker**.
 
 ![Node.js](https://img.shields.io/badge/Node.js-v20+-green.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-v5+-blue.svg)
@@ -8,7 +8,8 @@ Production-grade distributed microservices backend architecture built with **Nod
 ![Prisma](https://img.shields.io/badge/Prisma-ORM-indigo.svg)
 ![MongoDB](https://img.shields.io/badge/MongoDB-v7.0-brightgreen.svg)
 ![Redis](https://img.shields.io/badge/Redis-v7.0-red.svg)
-![Jest](https://img.shields.io/badge/Tests-59%20Passed-success.svg)
+![Prometheus](https://img.shields.io/badge/Prometheus-Monitoring-orange.svg)
+![Jest](https://img.shields.io/badge/Tests-62%20Passed-success.svg)
 
 ---
 
@@ -17,6 +18,7 @@ Production-grade distributed microservices backend architecture built with **Nod
 ```mermaid
 flowchart TD
     Client[Client / Postman / Frontend] -->|HTTP / REST| Gateway[API Gateway\nPort: 3000]
+    Prometheus[Prometheus Server\nPort: 9090] -->|Scrape 5s /metrics| OrchestratorNet
 
     subgraph OrchestratorNet [Docker Bridge Network: orchestrator_net]
         Gateway -->|Proxy /api/auth| AuthService[User Auth Service\nPort: 3001]
@@ -46,6 +48,7 @@ flowchart TD
 
 ### 🌐 `api-gateway` (Port 3000)
 - **Single Public Entry Point**: Routes `/api/auth`, `/api/orders`, `/api/notifications`, `/api/payments`, `/api/inventory`.
+- **Ecosystem Health Dashboard**: `http://localhost:3000/dashboard` interactive live UI.
 - **Redis Rate Limiting**: 100 requests per 15 minutes window per IP.
 - **Helmet Security**: XSS, Clickjacking, MIME sniffing headers.
 
@@ -71,6 +74,9 @@ flowchart TD
 - **Real-Time Stock Management**: Atomic stock reservation and release.
 - **Over-selling Protection**: Rejects order creation if product stock is insufficient.
 
+### 📊 `prometheus` (Port 9090)
+- **Observability Stack**: Scrapes `/metrics` endpoints across all 6 microservices every 5 seconds.
+
 ---
 
 ## ⚡ Quick Start (Docker Compose)
@@ -92,7 +98,10 @@ All client calls go to **`http://localhost:3000`** (API Gateway):
 
 | Service | Method | Endpoint | Description |
 | :--- | :--- | :--- | :--- |
+| Gateway | `GET` | `/dashboard` | Interactive Ecosystem Status Dashboard UI |
+| Gateway | `GET` | `/api/dashboard` | JSON System Health & Latency metrics |
 | Gateway | `GET` | `/health` | API Gateway Health Check |
+| Gateway | `GET` | `/metrics` | Prometheus Metrics Endpoint |
 | Auth | `POST` | `/api/auth/register` | Register new user account |
 | Auth | `POST` | `/api/auth/login` | Login & receive JWT token |
 | Auth | `GET` | `/api/auth/me` | Fetch authenticated profile |
@@ -109,7 +118,7 @@ All client calls go to **`http://localhost:3000`** (API Gateway):
 
 ## 🧪 Automated Testing
 
-The monorepo contains **59 automated test cases** across 6 microservices:
+The monorepo contains **62 automated test cases** across 6 microservices:
 
 ```bash
 npm test

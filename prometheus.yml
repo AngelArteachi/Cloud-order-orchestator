@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: 'cloud-order-orchestrator'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - 'api-gateway:3000'
+          - 'user-auth-service:3001'
+          - 'order-service:3002'
+          - 'notification-service:3003'
+          - 'payment-service:3004'
+          - 'inventory-service:3005'
